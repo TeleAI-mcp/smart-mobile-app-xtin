@@ -4,30 +4,36 @@ on:
   issues:
     types: [labeled]
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
-  auto-comment:
+  comment-on-label:
     runs-on: ubuntu-latest
-    if: github.event.label.name == 'documentation' || github.event.label.name == 'feature' || github.event.label.name == 'bug'
     steps:
-      - name: Post comment based on label
+      - name: Add comment based on label
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const label = context.payload.label.name;
-            let commentBody = '';
+            const issue_number = context.payload.issue.number;
+            
+            let comment = '';
             
             if (label === 'documentation') {
-              commentBody = 'Thank you for flagging this documentation issue. We will update it soon.';
+              comment = 'Thank you for flagging this documentation issue. We will update it soon.';
             } else if (label === 'feature') {
-              commentBody = 'Thank you for the feature request. We will consider including this in a future release.';
+              comment = 'Thank you for the feature request. We will consider including this in a future release.';
             } else if (label === 'bug') {
-              commentBody = 'Thank you for reporting this bug. Our team will investigate and fix it.';
+              comment = 'Thank you for reporting this bug. Our team will investigate and fix it.';
             }
             
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: commentBody
-            });
+            if (comment) {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue_number,
+                body: comment
+              });
+            }
